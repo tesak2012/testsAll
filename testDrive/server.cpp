@@ -86,6 +86,7 @@ void Server::slotReadClient()
 //    if(pClientSocket->bytesAvailable()<m_nNextBlockSize) break;
 
     in>>str_mess_for.user_name>>str_mess_for.type>>str_mess_for.x>>str_mess_for.y>>str_mess_for.angle>>str_mess_for.Health_I>>str_mess_for.Health_You;
+    qDebug()<<"Client has said "+str_mess_for.user_name+", type "+str_mess_for.type+", x "+str_mess_for.x+", y "+str_mess_for.y+"-*-"+str_mess_for.angle +" Health_I "+str_mess_for.Health_I+" Helth_You "+str_mess_for.Health_You;
     m_nNextBlockSize=0;
     sendToClient(pClientSocket);
     }

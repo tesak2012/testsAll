@@ -15,10 +15,10 @@ private Q_SLOTS:
 
     void testCreateServer();
     void testConnectToServer();
-    void testSendServer();
+    void testSendFromServer();
     void testReadServer();
-    void testConnectingClient();
-    void testSendClient();
+    void testConnectClient();
+    void testSendFromClient();
     void testClientServer();
     void testCreateUser();
     void testCreateUser_data();
@@ -30,21 +30,16 @@ ClientServerTest::ClientServerTest()
 
 void ClientServerTest::testCreateServer()
 {
-    Server *server=new Server(135);
-    QCOMPARE(server->m_ptcpServer->isListening(),false);
-    server->m_ptcpServer->close();
-    server=new Server(3333);
+    Server *server=new Server(33331);
     QCOMPARE(server->m_ptcpServer->isListening(),true);
     server->m_ptcpServer->close();
-
-
 }
 
 void ClientServerTest::testConnectToServer()
 {
-        Server *server=new Server(33333);
+        Server *server=new Server(33332);
         QTcpSocket *_client=new QTcpSocket();
-        _client->connectToHost(QHostAddress("127.0.0.1"),33333);
+        _client->connectToHost(QHostAddress("127.0.0.1"),33332);
         while (!server->connected)
             qApp->processEvents();
         QVERIFY(server->connected==true);
@@ -52,18 +47,18 @@ void ClientServerTest::testConnectToServer()
 \
 }
 
-void ClientServerTest::testSendServer()
+void ClientServerTest::testSendFromServer()
 {
-    Server *server=new Server(3333);
+    Server *server=new Server(33333);
     QTcpSocket *_client=new QTcpSocket();
-    _client->connectToHost(QHostAddress("127.0.0.1"),3333);
+    _client->connectToHost(QHostAddress("127.0.0.1"),33333);
     QDataStream in(_client);
     in.setVersion(QDataStream::Qt_4_7);
     while(!server->connected)
         qApp->processEvents();
-    QString answer,sa1;
+    QString answer;
     QString text="Server Response: Connected!";
-    in>>answer;
+    while(!answer.contains(text))
     in>>answer;
     QVERIFY(answer.contains(text)==true);
     server->m_ptcpServer->close();
@@ -72,17 +67,17 @@ void ClientServerTest::testSendServer()
 
 void ClientServerTest::testReadServer()
 {
-    Server *server=new Server(3333);
+    Server *server=new Server(33334);
     QTcpSocket *_client=new QTcpSocket();
-    _client->connectToHost(QHostAddress("127.0.0.1"),3333);
+    _client->connectToHost(QHostAddress("127.0.0.1"),33334);
     while(!server->connected)
         qApp->processEvents();
 
     QByteArray arrBlock;
     QDataStream out(&arrBlock,QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_7);
-    server->str_mess_from.user_name="asdasdasf";
-    out<<quint16(0)<<server->str_mess_from.user_name;
+
+    out<<quint16(0)<<"Message";
 
     out.device()->seek(0);
     out<<quint16(arrBlock.size()-sizeof(quint16));
@@ -95,11 +90,11 @@ void ClientServerTest::testReadServer()
     server->m_ptcpServer->close();
 }
 
-void ClientServerTest::testConnectingClient()
+void ClientServerTest::testConnectClient()
 {
     QTcpServer *_server=new QTcpServer();
-    _server->listen(QHostAddress::Any,3333);
-    Client *client=new Client(QHostAddress("127.0.0.1"),3333,"username");
+    _server->listen(QHostAddress::Any,33335);
+    Client *client=new Client(QHostAddress("127.0.0.1"),33335,"username");
     while(!client->connected)
         qApp->processEvents();
     QVERIFY(client->m_pTcpSocket->state()== QTcpSocket::ConnectedState);
@@ -108,16 +103,17 @@ void ClientServerTest::testConnectingClient()
     client->m_pTcpSocket->close();
 }
 
-void ClientServerTest::testSendClient()
+void ClientServerTest::testSendFromClient()
 {
     QTcpServer *_server=new QTcpServer();
-    _server->listen(QHostAddress::Any,3333);
-    Client *client=new Client(QHostAddress("127.0.0.1"),3333,"username");
-    QString str="asfasf";
+    _server->listen(QHostAddress::Any,33336);
+    Client *client=new Client(QHostAddress("127.0.0.1"),33336,"username");
+    QString str="Message";
     client->slotSendToServer(str);
     while(!client->connected)
         qApp->processEvents();
-
+    while(!client->reading)
+        qApp->processEvents();
     _server->close();
     client->m_pTcpSocket->close();
 
@@ -131,13 +127,13 @@ void ClientServerTest::testSendClient()
 
 void ClientServerTest::testClientServer()
 {
-    Server *server=new Server(33333);
-    Client *client=new Client(QHostAddress("127.0.0.1"),33333,"username");
+    Server *server=new Server(33337);
+    Client *client=new Client(QHostAddress("127.0.0.1"),33337,"username");
     while(!client->connected&&!server->connected)
         qApp->processEvents();
 
 
-    client->str_mess_from.user_name="ssa";
+    client->str_mess_from.user_name="Anton";
 
     client->slotSendToServer(client->str_mess_from);
 
@@ -152,7 +148,7 @@ void ClientServerTest::testClientServer()
         qApp->processEvents();
     }
 
-    QCOMPARE(server->str_mess_for.user_name,client->str_mess_for.user_name);
+    QCOMPARE(server->str_mess_for.user_name,client->str_mess_from.user_name);
 
 }
 
